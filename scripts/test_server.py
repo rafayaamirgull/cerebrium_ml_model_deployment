@@ -11,12 +11,18 @@ def get_credentials():
     """
     Retrieves the API endpoint and key from environment variables.
     """
-    endpoint = os.getenv(
-        "CEREBRIUM_ENDPOINT"
-    )  # https://run.cerebrium.ai/v3/p-c4721f96/mtailor-classifier/{function_name} https://api.cortex.cerebrium.ai/v4/p-c4721f96/mtailor-classifier/{function_name}
-    api_key = os.getenv(
-        "CEREBRIUM_API_KEY"
-    )  # eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiJwLWM0NzIxZjk2IiwiaWF0IjoxNzQ5Mzk2OTU1LCJleHAiOjIwNjQ5NzI5NTV9.aXYFY4W5ZzFEou9I3YAmMgHzMt1OAzFNR3t0nn8GR3ET9gFQbYmOh13F4Jw_xND-_sLKyK_iY9AOSoUKX-0LCh_IfWLH_mud0YnLykV4YdLLOtBcWQSOCygaNaiOrem-IiBoSjTiHWC_ovZNdHXJZeR3G1dbzZHSCkdwo8d0Sbt_CuPVO4BWXQHA-_LbNQJ2XOlsfJqt4qF9bJiSQrvjbssaKR0OiApcwmMlqhXoF1kQbosphVozr8y1P0QW_ScXsfx7WtLFwVABrVzaKBGOAffkiYbcVOOMCLvRzZfPq7vSVcWbKFxj30ZH1SlhQIVe9Ki5Ki9N0gciLMbGe9Q9Fg
+    endpoint = (
+        "https://api.cortex.cerebrium.ai/v4/p-c4721f96/mtailor-classifier/predict"
+    )
+
+    # os.getenv(
+    #     "CEREBRIUM_ENDPOINT"
+    # )
+    api_key = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiJwLWM0NzIxZjk2IiwiaWF0IjoxNzQ5Mzk2OTU1LCJleHAiOjIwNjQ5NzI5NTV9.aXYFY4W5ZzFEou9I3YAmMgHzMt1OAzFNR3t0nn8GR3ET9gFQbYmOh13F4Jw_xND-_sLKyK_iY9AOSoUKX-0LCh_IfWLH_mud0YnLykV4YdLLOtBcWQSOCygaNaiOrem-IiBoSjTiHWC_ovZNdHXJZeR3G1dbzZHSCkdwo8d0Sbt_CuPVO4BWXQHA-_LbNQJ2XOlsfJqt4qF9bJiSQrvjbssaKR0OiApcwmMlqhXoF1kQbosphVozr8y1P0QW_ScXsfx7WtLFwVABrVzaKBGOAffkiYbcVOOMCLvRzZfPq7vSVcWbKFxj30ZH1SlhQIVe9Ki5Ki9N0gciLMbGe9Q9Fg"
+
+    # os.getenv(
+    #     "CEREBRIUM_API_KEY"
+    # )
 
     if not endpoint or not api_key:
         print("=" * 60)
@@ -48,7 +54,7 @@ def make_prediction_request(
     Sends a prediction request to the Cerebrium endpoint.
     Returns the JSON response and the request latency.
     """
-    headers = {"Authorization": api_key, "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     payload = json.dumps({"image": image_b64})
 
     start_time = time.time()
@@ -58,27 +64,28 @@ def make_prediction_request(
     return response.json(), latency
 
 
-def run_single_prediction(image_path: Path):
-    """
-    Runs a single prediction for a given image path.
-    """
-    print(f"--- Running single prediction for: {image_path.name} ---")
-    endpoint, api_key = get_credentials()
+def make_prediction_request(
+    endpoint: str, api_key: str, image_b64: str
+) -> (dict, float):
+    headers = {
+        "Authorization": f"Bearer " + api_key,
+        "Content-Type": "application/json",
+    }
+    payload = json.dumps({"image": image_b64})
+
+    start_time = time.time()
+    response = requests.post(endpoint, headers=headers, data=payload)
+    latency = time.time() - start_time
+
+    print(f"\n--- Raw Response Debug ---")
+    print(f"Status Code: {response.status_code}")
+    print(f"Response Text: {response.text}")
 
     try:
-        image_b64 = encode_image(image_path)
-        result, latency = make_prediction_request(endpoint, api_key, image_b64)
-
-        print(f"Request Latency: {latency:.2f} seconds")
-        if "class_id" in result:
-            print(f"Predicted Class ID: {result['class_id']}")
-        else:
-            print(f"Received an error: {result}")
-
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
+        return response.json(), latency
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print("Failed to parse JSON from response.")
+        raise e
 
 
 def run_preset_tests():
@@ -120,14 +127,24 @@ def run_preset_tests():
 
     # Test 3: Malformed request
     print("\n[3] Running Malformed Request Test...")
-    headers = {"Authorization": api_key, "Content-Type": "application/json"}
-    # Sending a payload without the 'image' key
+    headers = {
+        "Authorization": f"Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiJwLWM0NzIxZjk2IiwiaWF0IjoxNzQ5Mzk2OTU1LCJleHAiOjIwNjQ5NzI5NTV9.aXYFY4W5ZzFEou9I3YAmMgHzMt1OAzFNR3t0nn8GR3ET9gFQbYmOh13F4Jw_xND-_sLKyK_iY9AOSoUKX-0LCh_IfWLH_mud0YnLykV4YdLLOtBcWQSOCygaNaiOrem-IiBoSjTiHWC_ovZNdHXJZeR3G1dbzZHSCkdwo8d0Sbt_CuPVO4BWXQHA-_LbNQJ2XOlsfJqt4qF9bJiSQrvjbssaKR0OiApcwmMlqhXoF1kQbosphVozr8y1P0QW_ScXsfx7WtLFwVABrVzaKBGOAffkiYbcVOOMCLvRzZfPq7vSVcWbKFxj30ZH1SlhQIVe9Ki5Ki9N0gciLMbGe9Q9Fg",
+        "Content-Type": "application/json",
+    }  # Sending a payload without the 'image' key
     malformed_payload = json.dumps({"wrong_key": "some_value"})
     response = requests.post(endpoint, headers=headers, data=malformed_payload)
-    if response.status_code == 200 and "error" in response.json():
-        print(
-            f"  - PASSED: Server correctly handled malformed payload with error: {response.json()['error']}"
-        )
+    data = response.json()
+    print(data)
+
+    if response.status_code == 200:
+        if isinstance(data, dict) and "error" in data:
+            print(
+                f"  - PASSED: Server correctly handled malformed payload with error: {data['error']}"
+            )
+        elif isinstance(data, list):
+            print("  - FAILED: Expected error dictionary, but got a list.")
+        else:
+            print("  - FAILED: Unexpected response format.")
     else:
         print(
             f"  - FAILED: Server responded with status {response.status_code}. Expected an error message."
