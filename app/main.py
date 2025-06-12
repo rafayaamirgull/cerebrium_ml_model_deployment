@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import base64
 from fastapi import FastAPI, Request
-from .model import OnnxModel  # Assuming model.py is in the same 'app' directory
+from model import OnnxModel  # Assuming model.py is in the same 'app' directory
 
 # Add the project root to the Python path to allow for absolute imports
 project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)

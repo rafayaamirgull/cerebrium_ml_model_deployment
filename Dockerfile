@@ -2,7 +2,8 @@
 FROM python:3.10-slim
 
 # Set the working directory inside the container
-WORKDIR /app
+ENV BASE_DIR /workspace
+WORKDIR ${BASE_DIR}
 
 # Set environment variables to prevent caching of pip packages and to ensure
 # Python output is sent straight to the terminal without being buffered.
@@ -18,8 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application directory, which contains our model and inference code,
 # into the container's working directory.
-COPY ./app /app
-
+COPY ./ ./
+ENV PYTHONPATH="/workspace"
 # Command to run the FastAPI application using Uvicorn.
 # The `main:app` refers to the 'app' object in 'main.py'.
 # The --host 0.0.0.0 makes it accessible from outside the container,
