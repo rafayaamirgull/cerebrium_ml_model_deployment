@@ -25,4 +25,4 @@ ENV PYTHONPATH="/workspace"
 # The `main:app` refers to the 'app' object in 'main.py'.
 # The --host 0.0.0.0 makes it accessible from outside the container,
 # and --port 8192 matches the port defined in cerebrium.toml.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8192"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8192"]
