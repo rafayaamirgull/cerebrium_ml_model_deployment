@@ -85,7 +85,7 @@ def run_preset_tests():
     endpoint, api_key = get_credentials()
 
     test_images = {
-        "tench": {"path": Path("dataset/n01440764_tench.JPEG"), "id": 0},
+        "tench": {"path": Path("dataset/n01440764_tench.jpeg"), "id": 0},
         "turtle": {"path": Path("dataset/n01667114_mud_turtle.JPEG"), "id": 35},
     }
 
