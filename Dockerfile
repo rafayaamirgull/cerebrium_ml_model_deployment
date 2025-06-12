@@ -20,4 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # into the container's working directory.
 COPY ./app /app
 
-# The Cerebrium platform will automatically start the application
+# Command to run the FastAPI application using Uvicorn.
+# The `main:app` refers to the 'app' object in 'main.py'.
+# The --host 0.0.0.0 makes it accessible from outside the container,
+# and --port 8192 matches the port defined in cerebrium.toml.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8192"]
