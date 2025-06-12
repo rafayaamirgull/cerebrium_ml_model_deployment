@@ -11,8 +11,12 @@ def get_credentials():
     """
     Retrieves the API endpoint and key from environment variables.
     """
-    endpoint = os.getenv("CEREBRIUM_ENDPOINT")
-    api_key = os.getenv("CEREBRIUM_API_KEY")
+    endpoint = os.getenv(
+        "CEREBRIUM_ENDPOINT"
+    )  # https://run.cerebrium.ai/v3/p-c4721f96/mtailor-classifier/{function_name} https://api.cortex.cerebrium.ai/v4/p-c4721f96/mtailor-classifier/{function_name}
+    api_key = os.getenv(
+        "CEREBRIUM_API_KEY"
+    )  # eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiJwLWM0NzIxZjk2IiwiaWF0IjoxNzQ5Mzk2OTU1LCJleHAiOjIwNjQ5NzI5NTV9.aXYFY4W5ZzFEou9I3YAmMgHzMt1OAzFNR3t0nn8GR3ET9gFQbYmOh13F4Jw_xND-_sLKyK_iY9AOSoUKX-0LCh_IfWLH_mud0YnLykV4YdLLOtBcWQSOCygaNaiOrem-IiBoSjTiHWC_ovZNdHXJZeR3G1dbzZHSCkdwo8d0Sbt_CuPVO4BWXQHA-_LbNQJ2XOlsfJqt4qF9bJiSQrvjbssaKR0OiApcwmMlqhXoF1kQbosphVozr8y1P0QW_ScXsfx7WtLFwVABrVzaKBGOAffkiYbcVOOMCLvRzZfPq7vSVcWbKFxj30ZH1SlhQIVe9Ki5Ki9N0gciLMbGe9Q9Fg
 
     if not endpoint or not api_key:
         print("=" * 60)
