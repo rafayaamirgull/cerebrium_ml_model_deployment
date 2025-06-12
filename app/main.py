@@ -1,16 +1,20 @@
 import sys
 import os
-
-project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
-sys.path.append(project_root)
-from cerebrium import get_secret
 from pathlib import Path
 import base64
-import io
+from fastapi import FastAPI, Request
+from .model import OnnxModel  # Assuming model.py is in the same 'app' directory
 
-# It's good practice to place the model loading logic in a separate module
-# to keep the main application file clean.
-from .model import OnnxModel
+# Add the project root to the Python path to allow for absolute imports
+project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
+sys.path.append(project_root)
+
+# Initialize the FastAPI app
+app = FastAPI(
+    title="Image Classifier API",
+    description="A deep learning model to classify images using ONNX Runtime.",
+    version="1.0.0",
+)
 
 
 class Predictor:
@@ -22,9 +26,11 @@ class Predictor:
 
         Args:
             config (dict): A dictionary containing the configuration for the model.
+                           (Not directly used in this simple example but can be for more complex setups)
         """
         print("Initializing predictor...")
-        model_path = Path("model.onnx")  # The model is in the same directory
+        # The model.onnx file should be available in the /app directory inside the container
+        model_path = Path("model.onnx")
 
         # Initialize our ONNX model handler. This will load the model into memory.
         # This one-time setup reduces latency on subsequent prediction calls.
@@ -68,3 +74,52 @@ class Predictor:
         # --- 4. Format and Return Output ---
         # The prediction was successful, return the class ID.
         return {"class_id": predicted_class_id}
+
+
+# Instantiate the predictor globally so it's loaded once
+# In a Cerebrium custom runtime, this 'Predictor' class is what Cerebrium expects.
+# It will call Predictor().__init__(config) and then Predictor().predict(item).
+# We are integrating it with FastAPI for the health check.
+predictor_instance = None
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Handler for application startup event.
+    Initializes the Predictor when the FastAPI application starts.
+    """
+    global predictor_instance
+    # In a real Cerebrium deployment, 'config' might be passed here.
+    # For local FastAPI testing, we'll pass an empty dict or mock config.
+    predictor_instance = Predictor(config={})
+    print("FastAPI startup: Predictor initialized.")
+
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint for Cerebrium.
+    Returns a 200 OK if the application is running.
+    """
+    if predictor_instance and predictor_instance.model:
+        return {"status": "ok", "message": "Model is loaded and ready"}
+    return {"status": "initializing", "message": "Model is still loading"}, 503
+
+
+@app.post("/predict")
+async def predict_endpoint(request: Request):
+    """
+    Prediction endpoint that takes a JSON payload with a base64-encoded image.
+    """
+    if not predictor_instance:
+        return {"error": "Model is not yet initialized"}, 503
+
+    try:
+        item = await request.json()
+        result = predictor_instance.predict(item)
+        if "error" in result:
+            return result, 400  # Bad request if prediction returns an error
+        return result
+    except Exception as e:
+        return {"error": f"An unexpected error occurred during prediction: {e}"}, 500
