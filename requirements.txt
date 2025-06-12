@@ -6,3 +6,6 @@ pillow
 onnx
 onnxruntime
 cerebrium
+fastapi
+uvicorn
+requests
