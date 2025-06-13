@@ -1,86 +1,241 @@
-**Deploy Classification Neural Network on Serverless GPU platform of Cerebrium**
+# Deep Learning Image Classifier Deployment on Cerebrium
 
+This repository contains a complete solution for deploying a pre-trained deep learning image classification model (based on ResNet18) to Cerebrium's serverless platform. The project demonstrates the full MLOps workflow, including ONNX model conversion with embedded preprocessing, building a FastAPI inference API, Docker containerization, cloud deployment, and comprehensive testing.
 
-You have to deploy a Machine Learning Model on Cerebrium [https://www.cerebrium.ai/].
-You have to use GitHub for the codebase.
+## Table of Contents
 
-**Assignment Protocols**
-- We expect it to take ~4 hours, with an extra 15 min for clear loom explanation(s)
-    - The assessment is timeboxed at 5 hours total in a single block. So please plan accordingly
-- You can only use Python as a programming Language
-- You cannot take help from any other person
-    - But you can use google to search for references
-- Record a 5-10 mins of code walkthrough of the work you have done. You can use Loom Platform (https://www.loom.com) to record the video
-    - A live demo of each of the features mentioned below:
-        - Cerebrium platform deployment page
-        - Other scripts as required in "Deliverable" section below
-        - Show all steps of Cerebrium deployment running successfully, and what you think as a pre-requisite to trigger deployment
-    - Code overview of each of those features:
-        - Why did you implement it that way?
-        - Is there any way you would improve it?
-    - Explain what tests you have developed and why
-    - Explain what parts of the assessment are completed and what is missing?
-    - Make sure to submit the screen recording link in the submission after you are done recording
-    - Please note that the free plan on Loom only allows for videos up to 5 minutes in length. As such, you may need to record two separate 5-minute videos
+- [Deep Learning Image Classifier Deployment on Cerebrium](#deep-learning-image-classifier-deployment-on-cerebrium)
+  - [Table of Contents](#table-of-contents)
+  - [1. Project Overview](#1-project-overview)
+  - [2. Prerequisites](#2-prerequisites)
+  - [3. Getting Started: Local Setup \& Model Preparation](#3-getting-started-local-setup--model-preparation)
+    - [3.1 Clone the Repository](#31-clone-the-repository)
+    - [3.2 Install Dependencies](#32-install-dependencies)
+    - [3.3 Download PyTorch Model Weights](#33-download-pytorch-model-weights)
+    - [3.4 Prepare Test Dataset](#34-prepare-test-dataset)
+    - [3.5 Convert PyTorch Model to ONNX](#35-convert-pytorch-model-to-onnx)
+    - [3.6 Run Local Unit Tests](#36-run-local-unit-tests)
+  - [4. Deployment to Cerebrium](#4-deployment-to-cerebrium)
+    - [4.1 Review Configuration Files](#41-review-configuration-files)
+      - [`cerebrium.toml`](#cerebriumtoml)
+      - [`Dockerfile`](#dockerfile)
+    - [4.2 Initiate Deployment](#42-initiate-deployment)
+    - [4.3 Monitor Deployment](#43-monitor-deployment)
+  - [5. Testing the Deployed Model](#5-testing-the-deployed-model)
+    - [5.1 Set Environment Variables](#51-set-environment-variables)
+    - [5.2 Run Preset Tests](#52-run-preset-tests)
+  - [6. Code Structure](#6-code-structure)
+  - [7. Key Design Decisions \& Potential Improvements](#7-key-design-decisions--potential-improvements)
+    - [7.1 Design Decisions](#71-design-decisions)
+    - [7.2 Potential Improvements](#72-potential-improvements)
+  - [8. Assignment Completion Status](#8-assignment-completion-status)
+  - [9. Loom Walkthrough Video](#9-loom-walkthrough-video)
 
-**Cerebrium Details:**
-- You need to use custom Docker Image based deployment. Any submission which is not based on Dockerfile will be rejected.
-- This example from Cerebrium explains how to use Docker Image [https://github.com/CerebriumAI/examples/tree/master/2-advanced-concepts/5-dockerfile]
+---
 
+## 1. Project Overview
 
-**Model Details:**
-- Model is designed to perform classification on an input Image
-- Model will be used in production where one would expect answers within 2-3 seconds
-- PyTorch Implementation of model is present in pytorch_model.py, and weights can be downloaded from this link: https://www.dropbox.com/s/b7641ryzmkceoc9/pytorch_model_weights.pth?dl=0
-- The model is trained on ImageNet Dataset [https://www.image-net.org]
-- The input to the model is an image of size 224x224, and the output is the array with probabilities for each class.
-- The length of the output array is equal to the number of classes [1000] in the ImageNet dataset.
-- There are two images in this repo:
-    - n01440764_tench belongs to class id 0
-    - n01667114_mud_turtle belongs to class id 35
+This project provides a complete solution for deploying an image classification model to Cerebrium. It encompasses:
 
-Model is trained on images with specific pre-processing steps, e.g. you need to do the following pre-processings on the image before passing it to the model. A function (preprocess_numpy) is implemented in the model class which performs the necessary pre-processing on the image, and at the end of pytorch_model.py you can see how to use the model on an image file to get inference.
-- Convert to RGB format if needed. The model accepts the image in RGB format, not in BGR. Code will never throw errors for this so keep an eye on the library you use to load image.
-- Resize to 224x224 (use bilinear interpolation)
-- Divide by 255
-- Normalize using mean values for each channel [RGB][0.485, 0.456, 0.406] and standard deviation values for each channel [RGB] [0.229, 0.224, 0.225]
-    - subtract mean and divide standard deviation per channel
+- **Model Conversion**: Converting a PyTorch model to ONNX format, embedding image preprocessing steps directly into the ONNX graph for efficient and consistent inference.
+- **API Development**: Building a high-performance REST API using FastAPI to serve model predictions.
+- **Containerization**: Defining a custom Docker image for consistent deployment across environments.
+- **Cloud Deployment**: Configuring and deploying the containerized application to Cerebrium.ai, a serverless platform optimized for machine learning workloads.
+- **Testing**: Providing robust testing scripts for both local model validation and end-to-end verification of the deployed endpoint, including correctness, latency, and error handling.
 
-**Deliverable**
-- convert_to_onnx.py | codebase to convert the PyTorch Model to the ONNX model
-- model.py with the following classes/functionalities, make their separate classes:
-    - Onnx Model loading and prediction call
-    - Pre-processing of the Image [Sample code provided in pytorch_model.py]
-- test.py | codebase to test the code/model written. This should test everything one would expect for ML Model deployment.
-- Things needed to deploy the code to the Cerebrium
-- test_server.py | codebase to make a call to the model deployed on the Cerebrium (Note: This should test deployment not something on your local machine)
-    - This should accept the path of the image and return/print the id of the class the image belongs to
-    - And also accept a flag to run preset custom tests, something like test.py but uses deployed model.
-    - Add more tests to test the Cerebrium as a platform. Anything to monitor the deployed model.
-- Readme File | which has steps to run/use all the deliverables with proper details, such that a person who has no prior information about this repo can understand and run this easily with no blockers.
+The model is pre-trained on the ImageNet dataset and is capable of classifying images into 1000 categories, expecting responses within 2–3 seconds in production.
 
-**Evaluation Criteria**
- - *Python* best practices
- - Completeness: Did you include all features?
- - Correctness: Does the solution (all deliverables) work in sensible, thought-out ways?
- - Maintainability: Is the code written in a clean, maintainable way?
- - Testing: Is the solution adequately tested?
- - Documentation: Is the codebase well-documented and has proper steps to run any of the deliverables?
+## 2. Prerequisites
 
-**Things which are very important and will be considered during evaluation**
-- Your test_server.py should be properly implemented, we will use that to test your final deployment.
-    - Kindly put API-Key and model api link that needs to be passed to the test_server.py, incase its not added in test_server.py and needs to be passed as arguments.
-    - If test_server.py is not runable without requesting further information from you, your submission will not be evaluated.
-- Don't deploy PyTorch Model, you need to convert the PyTorch Model to ONNX first and use that in the deployment.
-- Code Formatting and Documentation.
-- Proper use of Git.
-- Meaningful and good commits, we will monitor commit history.
+Before you start, ensure you have the following installed on your system:
 
-**Extra Points:**
-- CI pipeline to test Docker Image builds succesfully everytime we push a new commit to repo.
-- Make pre-processing steps part of Onnx File [<name_of_model>.onnx file], which needs to be done during onnx conversion, instead of implementing them in the code inside app.py.
+- **Python 3.10+**
+- **Git**
+- **Docker** (optional but helpful)
+- **Cerebrium CLI**:
+  ```bash
+  pip install cerebrium
+  cerebrium login
+  ```
 
-**Note:**
-- You get 30 USD of free credits on Cerebrium on new signup.
-    - This is more than enough for this task. You would at max spend 2-3 USD from free credits.
-- In case, you add your credit/debit card on the platform (which is not needed) and some mishap occurs, and you are charged an extra amount MTailor is not accountable for that.
+- **Python Dependencies**:
+  ```bash
+  pip install -r requirements.txt
+  ```
+
+## 3. Getting Started: Local Setup & Model Preparation
+
+### 3.1 Clone the Repository
+
+```bash
+git clone <your_repo_url>
+cd <your_repo_name>
+```
+
+### 3.2 Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3.3 Download PyTorch Model Weights
+
+```bash
+mkdir -p weights
+# Download weights manually from:
+# https://www.dropbox.com/s/b7641ryzmkceoc9/pytorch_model_weights.pth?dl=0
+# Place into weights/
+```
+
+### 3.4 Prepare Test Dataset
+
+```bash
+mkdir -p dataset
+# Place these files into dataset/:
+# - n01440764_tench.jpeg (class ID: 0)
+# - n01667114_mud_turtle.JPEG (class ID: 35)
+```
+
+### 3.5 Convert PyTorch Model to ONNX
+
+```bash
+python scripts/convert_to_onnx.py
+```
+
+### 3.6 Run Local Unit Tests
+To test the onnx converted model inference, run the following command:
+```bash
+pytest scripts/test.py -v -s
+```
+
+---
+
+## 4. Deployment to Cerebrium
+
+### 4.1 Review Configuration Files
+
+#### `cerebrium.toml`
+```toml
+name = "mtailor-classifier"
+python_version = "3.10"
+gpu_count = 0
+port = 8192
+healthcheck_endpoint = "/health"
+dockerfile_path = "./Dockerfile"
+```
+
+#### `Dockerfile`
+
+```Dockerfile
+FROM python:3.10-slim
+WORKDIR /workspace
+COPY ./ ./
+RUN pip install -r requirements.txt
+ENV PYTHONPATH="/workspace"
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8192"]
+```
+
+### 4.2 Initiate Deployment
+
+```bash
+cerebrium deploy #You need to login first on linux terminal with "cerebrium login" command
+```
+
+### 4.3 Monitor Deployment
+
+Check your Cerebrium dashboard for deployment status.
+
+---
+
+## 5. Testing the Deployed Model
+
+### 5.1 Set Environment Variables
+
+```bash
+export CEREBRIUM_ENDPOINT="https://api.cortex.cerebrium.ai/v4/p-c4721f96/mtailor-classifier/predict"
+
+export CEREBRIUM_API_KEY="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiJwLWM0NzIxZjk2IiwiaWF0IjoxNzQ5Mzk2OTU1LCJleHAiOjIwNjQ5NzI5NTV9.aXYFY4W5ZzFEou9I3YAmMgHzMt1OAzFNR3t0nn8GR3ET9gFQbYmOh13F4Jw_xND-_sLKyK_iY9AOSoUKX-0LCh_IfWLH_mud0YnLykV4YdLLOtBcWQSOCygaNaiOrem-IiBoSjTiHWC_ovZNdHXJZeR3G1dbzZHSCkdwo8d0Sbt_CuPVO4BWXQHA-_LbNQJ2XOlsfJqt4qF9bJiSQrvjbssaKR0OiApcwmMlqhXoF1kQbosphVozr8y1P0QW_ScXsfx7WtLFwVABrVzaKBGOAffkiYbcVOOMCLvRzZfPq7vSVcWbKFxj30ZH1SlhQIVe9Ki5Ki9N0gciLMbGe9Q9Fg"
+
+```
+
+### 5.2 Run Preset Tests
+
+```bash
+python scripts/test_server.py --run-tests
+```
+---
+
+## 6. Code Structure
+
+```
+project-root/
+│
+├── app/
+│   ├── main.py
+│   ├── model.py
+│   └── model.onnx
+│
+├── scripts/
+│   ├── convert_to_onnx.py
+│   ├── onnx_inference_test.py
+│   ├── test.py
+│   └── test_server.py
+│
+├── weights/
+│   └── pytorch_model_weights.pth
+│
+├── dataset/
+│   ├── n01440764_tench.jpeg
+│   └── n01667114_mud_turtle.JPEG
+│
+├── Dockerfile
+├── cerebrium.toml
+├── requirements.txt
+└── pytorch_model.py
+```
+
+---
+
+## 7. Key Design Decisions & Potential Improvements
+
+### 7.1 Design Decisions
+
+- **ONNX Conversion with Preprocessing**: Embedding image preprocessing directly into the ONNX graph.
+- **FastAPI**: Used for its performance and developer-friendly features.
+- **OnnxModel Class**: Centralized model loading and inference logic.
+- **Startup Initialization**: Model is loaded once on server start.
+- **Comprehensive Testing**: Both unit and integration tests provided.
+
+### 7.2 Potential Improvements
+
+- **GPU Deployment**: Modify `compute` and `gpu_count` in `cerebrium.toml`.
+- **Better Logging**: Use `logging` module instead of `print`.
+- **Async Inference**: Consider if async ONNX support becomes feasible.
+- **Human-Readable Labels**: Map class ID to names.
+- **CI/CD**: Add GitHub Actions for testing and deployment.
+- **Model Registry**: Use MLflow or DVC for versioning.
+
+---
+
+## 8. Assignment Completion Status
+
+ `convert_to_onnx.py`: Preprocessing + ONNX conversion  
+ `model.py`: OnnxModel class  
+ `test.py`: Unit tests  
+ `cerebrium.toml`, `Dockerfile`: Deployment configs  
+ `test_server.py`: Integration tests  
+ `README`: Complete documentation
+
+---
+
+## 9. Loom Walkthrough Video
+
+Walkthrough Video: [Model Deployment and Testing Overview on Cerebrium](https://www.loom.com/share/2f3f71594fdf4c2db5b05b8fa818f900)
+
+The video demonstrates:
+
+- Code walkthrough (`convert_to_onnx.py`, `model.py`, `main.py`)
+- Deployment to Cerebrium
+- API testing with `test_server.py`
+- Project completion summary
+
