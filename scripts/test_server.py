@@ -128,7 +128,7 @@ def run_preset_tests():
     # Test 3: Malformed request
     print("\n[3] Running Malformed Request Test...")
     headers = {
-        "Authorization": f"Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiOiJwLWM0NzIxZjk2IiwiaWF0IjoxNzQ5Mzk2OTU1LCJleHAiOjIwNjQ5NzI5NTV9.aXYFY4W5ZzFEou9I3YAmMgHzMt1OAzFNR3t0nn8GR3ET9gFQbYmOh13F4Jw_xND-_sLKyK_iY9AOSoUKX-0LCh_IfWLH_mud0YnLykV4YdLLOtBcWQSOCygaNaiOrem-IiBoSjTiHWC_ovZNdHXJZeR3G1dbzZHSCkdwo8d0Sbt_CuPVO4BWXQHA-_LbNQJ2XOlsfJqt4qF9bJiSQrvjbssaKR0OiApcwmMlqhXoF1kQbosphVozr8y1P0QW_ScXsfx7WtLFwVABrVzaKBGOAffkiYbcVOOMCLvRzZfPq7vSVcWbKFxj30ZH1SlhQIVe9Ki5Ki9N0gciLMbGe9Q9Fg",
+        "Authorization": f"Bearer " + api_key,
         "Content-Type": "application/json",
     }  # Sending a payload without the 'image' key
     malformed_payload = json.dumps({"wrong_key": "some_value"})
