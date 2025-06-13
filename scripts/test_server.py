@@ -153,6 +153,27 @@ def run_preset_tests():
     print("\n--- Test Suite Finished ---")
 
 
+def run_single_prediction(image_path):
+    """
+    Runs a test against the deployed endpoint for specified input image.
+    """
+
+    print("\n--- Running Single Prediction Test ---")
+    endpoint, api_key = get_credentials()
+
+    image_b64 = encode_image(image_path)
+    result, _ = make_prediction_request(endpoint, api_key, image_b64)
+    predicted_id = result.get("class_id", -1)
+    if predicted_id != -1 or None:
+        print(
+            f"  - PASSED: '{image_path.name}' correctly classified as {predicted_id}."
+        )
+    else:
+        print(f"  - FAILED: '{image_path.name}' cannot be classified [UNKNOWN LABEL]")
+
+    print("\n--- Single Prediction Test Finished ---")
+
+
 def main():
     """
     Main function to parse arguments and run the appropriate test.
