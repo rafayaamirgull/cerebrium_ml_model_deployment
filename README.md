@@ -68,8 +68,8 @@ Before you start, ensure you have the following installed on your system:
 ### 3.1 Clone the Repository
 
 ```bash
-git clone <your_repo_url>
-cd <your_repo_name>
+git clone https://github.com/rafayaamirgull/cerebrium_ml_model_deployment
+cd cerebrium_ml_model_deployment
 ```
 
 ### 3.2 Install Dependencies
@@ -162,6 +162,13 @@ export CEREBRIUM_API_KEY="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0SWQiO
 
 ```bash
 python scripts/test_server.py --run-tests
+```
+---
+
+### 5.3 Run Single Frame Inference Test
+
+```bash
+python scripts/test_server.py  --image_path "<path-to-your-image>"
 ```
 ---
 
